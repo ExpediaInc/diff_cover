@@ -159,7 +159,7 @@ class XmlCoverageReporter(BaseViolationReporter):
 
         If file is not present in `xml_document`, return None
         """
-
+        print("\nFinding line nodes of ",{src_path}," in coverage report")
         files = []
         packages = [pkg for pkg in xml_document.findall(".//package")]
         for pkg in packages:
@@ -240,13 +240,18 @@ class XmlCoverageReporter(BaseViolationReporter):
                     }
 
                 # Measured is the union of itself and the new measured
+                print("Calculating measure_lines in ",{src_path})
                 measured = measured | {int(line.get(_number)) for line in line_nodes}
 
             # If we don't have any information about the source file,
             # don't report any violations
             if violations is None:
                 violations = set()
-
+            print("Resulting violations: ")
+            print(violations)
+            print("Resulting measure_lines: ")
+            print(measured)
+            print("Caching ",{src_path}," violations and measured lines")
             self._info_cache[src_path] = (violations, measured)
 
     def violations(self, src_path):

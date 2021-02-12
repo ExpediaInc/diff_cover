@@ -198,6 +198,7 @@ def generate_coverage_report(
                 reporter.generate_css(output_file)
 
     elif json_report is not None:
+        print("Invoking JsonReportGenerator")
         reporter = JsonReportGenerator(coverage, diff)
         with open(json_report, "wb") as output_file:
             reporter.generate_report(output_file)
@@ -206,7 +207,7 @@ def generate_coverage_report(
         reporter = MarkdownReportGenerator(coverage, diff)
         with open(markdown_report, "wb") as output_file:
             reporter.generate_report(output_file)
-
+    print("Invoking StringReportGenerator")
     reporter = StringReportGenerator(coverage, diff)
     output_file = sys.stdout.buffer
 

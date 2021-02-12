@@ -46,7 +46,9 @@ class BaseReportGenerator:
         from `violations_reporter` (of type BaseViolationReporter)
         and `diff_reporter` (of type BaseDiffReporter)
         """
+        # XmlCoverageReporter
         self._violations = violations_reporter
+        # GitDiffReporter
         self._diff = diff_reporter
         self._diff_violations_dict = None
 
@@ -80,6 +82,7 @@ class BaseReportGenerator:
         Return a list of source files in the diff
         for which we have coverage information.
         """
+        print("Invoking _diff_violations to get src_stats")
         return {
             src
             for src, summary in self._diff_violations().items()
@@ -128,21 +131,29 @@ class BaseReportGenerator:
         Return the total number of lines in the diff for
         which we have coverage info.
         """
-
-        return sum(
+        arr = [
+            summary.measured_lines
+            for summary in self._diff_violations().values()
+        ]
+        print(arr)
+            
+        tot = sum(
             [
                 len(summary.measured_lines)
                 for summary in self._diff_violations().values()
             ]
         )
+        print("Total lines from _diff_violations: ", tot)
+        return tot
 
     def total_num_violations(self):
         """
         Returns the total number of lines in the diff
         that are in violation.
         """
-
-        return sum(len(summary.lines) for summary in self._diff_violations().values())
+        tot = sum(len(summary.lines) for summary in self._diff_violations().values())
+        print("Total violations from _diff_violations: ", tot)
+        return tot
 
     def total_percent_covered(self):
         """
@@ -153,10 +164,12 @@ class BaseReportGenerator:
 
         if total_lines > 0:
             num_covered = total_lines - self.total_num_violations()
-            return int(float(num_covered) / total_lines * 100)
+            tot = int(float(num_covered) / total_lines * 100)
 
         else:
-            return 100
+            tot = 100
+        print("Total percent covered from _diff_violations: ", tot)
+        return tot
 
     def _diff_violations(self):
         """
@@ -169,6 +182,7 @@ class BaseReportGenerator:
         To make this efficient, we cache and reuse the result.
         """
         if not self._diff_violations_dict:
+            print("Initialising _diff_violations_dict from XmlCoverageReporter and GitDiffReporter")
             self._diff_violations_dict = {
                 src_path: DiffViolations(
                     self._violations.violations(src_path),
@@ -180,8 +194,9 @@ class BaseReportGenerator:
         return self._diff_violations_dict
 
     def report_dict(self):
+        print("Initialising src_stats from src_paths")
         src_stats = {src: self._src_path_stats(src) for src in self.src_paths()}
-
+        print("\nGenerating Report...")
         return {
             "report_name": self.coverage_report_name(),
             "diff_name": self.diff_report_name(),
@@ -208,15 +223,16 @@ class BaseReportGenerator:
 
 
 # Set up the template environment
-TEMPLATE_LOADER = PackageLoader(__package__)
+TEMPLATE_LOADER = PackageLoader("diff_cover")
 TEMPLATE_ENV = Environment(loader=TEMPLATE_LOADER, trim_blocks=True, lstrip_blocks=True)
 TEMPLATE_ENV.filters["pluralize"] = pluralize_dj
 
 
 class JsonReportGenerator(BaseReportGenerator):
     def generate_report(self, output_file):
+        print("Invoking report dictionary")
         json_report_str = json.dumps(self.report_dict())
-
+        print("Writing to json file..\n")
         # all report generators are expected to write raw bytes, so we encode
         # the json
         output_file.write(json_report_str.encode("utf-8"))
