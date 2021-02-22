@@ -11,7 +11,14 @@ import itertools
 import posixpath
 from diff_cover.command_runner import run_command_for_code
 from diff_cover.git_path import GitPathTool
-from diff_cover.violationsreporters.base import BaseViolationReporter, Violation, RegexBasedDriver, QualityDriver
+from diff_cover.violationsreporters.base import (
+    BaseViolationReporter,
+    Violation,
+    ViolationInfo,
+    MeasuredInfo,
+    RegexBasedDriver,
+    QualityDriver,
+)
 
 
 class XmlCoverageReporter(BaseViolationReporter):
@@ -186,9 +193,12 @@ class XmlCoverageReporter(BaseViolationReporter):
                     _hits = 'count'
                 elif xml_document.findall('.[@name]'):
                     # https://github.com/jacoco/jacoco/blob/master/org.jacoco.report/src/org/jacoco/report/xml/report.dtd
-                    line_nodes = self._get_src_path_line_nodes_jacoco(xml_document, src_path)
-                    _number = 'nr'
-                    _hits = 'ci'
+                    line_nodes = self._get_src_path_line_nodes_jacoco(
+                        xml_document, src_path
+                    )
+                    _number = "nr"
+                    _misses = "mi"
+                    _hits = "ci"
                 else:
                     # https://github.com/cobertura/web/blob/master/htdocs/xml/coverage-04.dtd
                     line_nodes = self._get_src_path_line_nodes_cobertura(xml_document, src_path)
@@ -200,24 +210,26 @@ class XmlCoverageReporter(BaseViolationReporter):
                 # First case, need to define violations initially
                 if violations is None:
                     violations = {
-                        Violation(int(line.get(_number)), None)
+                        ViolationInfo(int(line.get(_number)), int(line.get(_misses, 0)))
                         for line in line_nodes
-                        if int(line.get(_hits, 0)) == 0}
+                        if int(line.get(_misses, 1)) != 0
+                    }
 
                 # If we already have a violations set,
                 # take the intersection of the new
                 # violations set and its old self
                 else:
                     violations = violations & {
-                        Violation(int(line.get(_number)), None)
+                        ViolationInfo(int(line.get(_number)), int(line.get(_misses, 0)))
                         for line in line_nodes
-                        if int(line.get(_hits, 0)) == 0
+                        if int(line.get(_misses, 1)) != 0
                     }
 
                 # Measured is the union of itself and the new measured
                 measured = measured | {
-                    int(line.get(_number)) for line in line_nodes
-                }
+                        MeasuredInfo(int(line.get(_number)), int(line.get(_hits, 0)) + int(line.get(_misses, 0)))
+                        for line in line_nodes
+                    }
 
             # If we don't have any information about the source file,
             # don't report any violations
