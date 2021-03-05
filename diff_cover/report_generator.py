@@ -219,7 +219,7 @@ class BaseReportGenerator:
 
 
 # Set up the template environment
-TEMPLATE_LOADER = PackageLoader("diff_cover")
+TEMPLATE_LOADER = PackageLoader(__package__)
 TEMPLATE_ENV = Environment(loader=TEMPLATE_LOADER, trim_blocks=True, lstrip_blocks=True)
 TEMPLATE_ENV.filters["pluralize"] = pluralize_dj
 
