@@ -12,7 +12,9 @@ import os
 
 from diff_cover.command_runner import execute, run_command_for_code
 
-Violation = namedtuple('Violation', 'line, message')
+Violation = namedtuple("Violation", "line, message")
+ViolationInfo = namedtuple("ViolationInfo", "line, missed_instructions")
+MeasuredInfo = namedtuple("MeasuredInfo", "line, total_instructions")
 
 
 class QualityReporterError(Exception):
